@@ -1,0 +1,6 @@
+order_id,customer_id,order_date,order_status
+1,1,2022-05-01,Delivered
+2,5,2022-05-05,Delivered
+3,2,2022-12-11,Delivered
+4,3,2022-12-25,Delivered
+5,4,2022-11-10,Pending
