@@ -12,4 +12,4 @@ cr_payments,
 cr_productlines,
 cr_products,
 
-## In this project written querries need to be optimise
+## In this project written queries need to be optimise
