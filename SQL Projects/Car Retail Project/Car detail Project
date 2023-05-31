@@ -1,0 +1,97 @@
+#For this SQL project i will be answering 4 question from this data set
+
+# 1. Find out the top 3 Products (“productLine”) for each month that generated the highest profit.
+Profit = ( Price per unit - Buying Price per Unit ) x No. of Units Ordered
+
+Ans:
+select month,productLine,profit_result,rank() over(partition by month order by profit_result desc) as ranking
+from(select month,productLine,sum(profit_case) as profit_result
+from (select monthname(orderDate) as month,productLine,(priceEach-buyprice)*Quantityordered as profit_case
+from (select d.orderNumber,d.productCode,d.orderDate,d.Quantityordered,d.priceEach,c.productLine,c.buyPrice
+from cr_products c 
+join (select b.orderNumber,b.productCode,a.orderDate,b.Quantityordered,b.priceEach
+from cr_orders a 
+join cr_orderdetails b 
+on a.orderNumber=b.orderNumber)d 
+on c.productCode=d.productCode) e) f
+group by month,productLine ) g
+
+# 2. Find the Month on Month growth in profit for each year.
+MoM_growth is calculated as follows.
+Mom = [Value(thismonth)/value(lastmonth) - 1] * 100%
+For example,
+MoM (Feb 2003) = ((Annual Revenue of Feb 2003/Annual Revenue of Jan 2003) - 1) * 100
+Note: Please make sure that MoM is calculated for each year. 
+Meaning, that ideally MoM growth of the first month of every year should be NULL as shown in the sample output below.
+
+Ans : 
+select year,month,profit_result,((profit_result/lag(profit_result,1,"null") over(partition by year))-1)*100 as MoM
+ from(select year,month,sum(profit_case) as profit_result
+from (select year(orderDate)as year,monthname(orderDate) as month,(priceEach-buyprice)*Quantityordered as profit_case
+from (select d.orderNumber,d.productCode,d.orderDate,d.Quantityordered,d.priceEach,c.buyPrice
+from cr_products c 
+join (select b.orderNumber,b.productCode,a.orderDate,b.Quantityordered,b.priceEach
+from cr_orders a 
+join cr_orderdetails b 
+on a.orderNumber=b.orderNumber)d 
+on c.productCode=d.productCode) e) f
+group by year,month ) g 
+
+# 3. For each customer i.e (customerNumber) count the number of orders above and below the average order value.
+“Average Order Value(AOV)” is calculated as below,
+AOV = Total Revenue / Number of orders
+Total Revenue is calculated as the sum of the revenue of each order.
+Each order revenue is Price per unit * No. of Units.
+
+Open Hint: AVG() OVER() Windows Function can be used here to calculate AOV.
+
+Since you need to get the count of orders above and below the AOV. The final output looks like the below.
+Conditions to get following details,
+
+Order Above AVG = Actual Order Value >= AVG Order Value
+Order Below AVG = Actual Order Value < AVG Order Value
+
+Ans:
+select customerNumber,contactFirstName,contactLastName,count(cata) as "order below avg"
+from (select *, case 
+          when total_revenue>=AOV then 1 
+          when total_revenue<AOV then 0 
+          end as cata 
+from (select customerNumber,contactFirstName,contactLastName,orderNumber,quantityOrdered,priceEach,total_revenue,avg(total_revenue) over() as AOV
+from (select customerNumber,contactFirstName,contactLastName,orderNumber,quantityOrdered,priceEach,quantityOrdered*priceEach as total_revenue
+from(select c.customerNumber,c.contactFirstName,c.contactLastName,d.orderNumber,d.quantityOrdered,d.priceEach
+from (select b.orderNumber,b.customerNumber,a.contactFirstName,a.contactLastName
+from cr_customers a
+join cr_orders b 
+on a.customerNumber=b.customerNumber) c 
+join cr_orderdetails d 
+on c.orderNumber=d.orderNumber  ) e) f) g )h
+where cata=0 
+group by customerNumber
+order by customerNumber asc
+
+# 4. n the business, customer order the product in bulk and it is the utmost priority of the business to fulfill the order requirement as to when required. Hence a business has to keep checking their stock regularly to give uninterrupted delivery.
+To make that happen, create a report as shown below to get the updated stock and status to check if we are running out of stock (or are we going to fulfill the next customer order?)
+Consider the first row as an example where product code “S18_2248”. Its initial stock quantity was 540. After the first order i.e orderNumber 10100 from the customer i.e order quantity of 50, the updated stock value would be (540 - 50) 490. Now, the status needs to be updated based on the next order quantity, for example, the Next order is of quantity 32 and we have 490 products in stock hence we can easily serve the next order request (Status is Yes)
+
+But if you look at the blue highlighted row then, in that case, “updatedStock” value is 12 and next order is of quantity 46 hence the status would No.
+
+Ans:
+select*,case
+        when are_we_fulfill>=0 then "yes"
+        else "no"
+        end as "Status"
+from (select*,(updatedstocks-lead(quant_ord,1,"null") over(partition by productCode)) as "are_we_fulfill"
+from(select No,OrderDate,productCode,orderNumber,quantityInStock,quant_ord,product_sold,(quantityInStock-product_sold) as updatedstocks
+from (select *,sum(quant_ord) over(partition by productcode order by No asc) as product_sold
+from (select*,row_number() over(partition by productCode) as No
+from(select d.orderdate,d.productCode,d.orderNumber,c.quantityInStock,d.quant_ord
+from cr_products c
+join (select a.OrderDate,b.productCode,b.orderNumber,sum(b.Quantityordered) as quant_ord
+from cr_orders a
+join cr_orderdetails b 
+on a.orderNumber=b.orderNumber
+group by a.OrderDate,b.productCode,b.orderNumber) d 
+on c.productCode=d.productCode
+)e )f)g)h)i
+
