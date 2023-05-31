@@ -1,1 +1,76 @@
+#For this SQL project i will be answering 9 question from this data set
+#Let start by introducing the table 
+
+select *
+from imdb_movies ;
+
+# 1. Segment the movies based on the below criteria using CASE WHEN
+     Revenue greater than or equal to 300 million: Blockbuster
+     Revenue between 200 and 299.99 million: Superhit
+     Revenue between 100 and 199.99 million: Hit
+     Else: Normal
+
+How many movies are ‘Superhit’ in the year 2014?
+
+Ans :
+SELECT result,
+       Count(title) AS number_of_movies
+FROM   (SELECT title,
+               genre,
+               revenue_millions,
+               year,
+               CASE
+                 WHEN revenue_millions >= 300 THEN 'Blockbuster'
+                 WHEN revenue_millions BETWEEN 200 AND 299.99 THEN 'Super Hit'
+                 WHEN revenue_millions BETWEEN 100 AND 199.99 THEN 'Hit'
+                 ELSE 'Normal'
+               END AS result
+        FROM   imdb_movies) A
+WHERE  year = 2014
+GROUP  BY result 
+
+# 2. Segment the movies based on the below criteria using CASE WHEN
+     Revenue greater than or equal to 300 million: Blockbuster
+     Revenue between 200 and 299.99 million: Superhit
+     Revenue between 100 and 199.99 million: Hit
+     Else: Normal
+
+What is the total revenue of the Blockbuster movies in the year 2015?
+Ans :
+SELECT result,
+       Sum(revenue_millions) AS tot_revenue
+FROM   (SELECT title,
+               genre,
+               revenue_millions,
+               year,
+               CASE
+                 WHEN revenue_millions >= 300 THEN 'Blockbuster'
+                 WHEN revenue_millions BETWEEN 200 AND 299.99 THEN 'Super Hit'
+                 WHEN revenue_millions BETWEEN 100 AND 199.99 THEN 'Hit'
+                 ELSE 'Normal'
+               END AS result
+        FROM   imdb_movies) A
+WHERE  year = 2015
+GROUP  BY result 
+
+# 3. Segment the movies based on ratings using IF statement as below:
+     Rating greater than or equal to 8: ‘Must Watch’
+     Rating between 6 and 7.9: ‘Can Watch’
+     Rating below 6: ‘Avoid’
+
+How many movies are a ‘Must Watch’ in the entire dataset?
+Ans:
+SELECT result,
+       Count(title) AS number_of_movies
+FROM   (SELECT title,
+               genre,
+               rating,
+               year,
+               IF(rating >= 8, 'Must Watch',
+               IF(rating BETWEEN 6 AND 7.9, 'Can Watch',
+               'Avoid')
+               ) AS result
+        FROM   imdb_movies) A
+GROUP  BY result 
+
 
