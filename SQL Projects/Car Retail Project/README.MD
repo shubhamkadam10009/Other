@@ -11,3 +11,5 @@ cr_orders,
 cr_payments,
 cr_productlines,
 cr_products,
+
+## In this project written querries need to be optimise
