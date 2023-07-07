@@ -1,6 +1,6 @@
 # Data Analytics with PowerBi
 
-Welcome to the world of data analytics with PowerBi! In this folder, you will find a collection of projects and resources that showcase the power and versatility of PowerBi in data analysis.
+Welcome to the world of data analytics with PowerBi. In this folder, you will find a collection of projects and resources that showcase the power and versatility of PowerBi in data analysis.
 
 Power BI is a Business Intelligence and Data Visualization tool designed to analyze, visualize, and process enormous volumes of raw business data and transform them into actionable and interactive insights that help business managers, corporate executives, and other users to make better informed business decisions.
 
