@@ -1,0 +1,81 @@
+## Problem Statements :
+
+
+Q.1 How many events were conducted via Facebook and Twitter in January 2015?
+select count(event_id)
+from (WITH x AS 
+            	(select event_id,account_id,channel,monthname(occurred_at) as "Month",Year(occurred_at) as "Year"
+             	from pm_web_events)
+         select event_id,account_id,channel,concat(Month,"-",Year) as "Occured"
+          from x) a 
+where (channel= "Facebook" or channel="Twitter") and Occured="January-2015"
+
+
+Q.2 How many accounts are operated by the agents of the ‘Northeast’ location?
+select count(id)
+from pm_accounts a 
+    join pm_agents b
+    on a.agent_id=b.agent_id
+where location = "Northeast"
+
+
+Q.3 Find out the accounts-to-agents ratio for the accounts operated by the agents of the ‘Midwest’ location.
+select count(a.id)
+from pm_accounts a 
+        join pm_agents b
+        on a.agent_id=b.agent_id
+where location = "Midwest"
+
+select count(distinct(b.agent_id))
+from pm_accounts a 
+    join pm_agents b
+    on a.agent_id=b.agent_id
+where location = "Midwest"
+
+(Divide the Output of the two queries )
+
+
+Q.4 List the account name for which orders have been placed.
+select distinct(name)
+from pm_orders a 
+join pm_accounts b 
+on a.account_id=b.id 
+
+
+Q.5 Select the account that made the highest total sales between 12-Jan-2014 to 15-Nov-2015.
+select b.name,a.account_id,sum(a.total_amt_usd) as "Total_sale"
+from pm_orders a 
+    join pm_accounts b 
+    on a.account_id=b.id
+where occurred_at between ("2014-01-12") and ("2015-11-15")
+group by name,account_id
+order by Total_sale desc
+limit 1
+
+
+Q.6 Select the account/(s) which used Twitter as a channel more than ten times.
+select distinct(x.name)
+from (select e.account_id,f.name,e.channel,e.c
+         from    (select *
+                 from  (select account_id,channel,count(channel)over(partition by account_id,channel) as "c"
+                           from pm_web_events) a 
+                 order by c desc) e 
+        join pm_accounts f 
+        on e.account_id=f.id
+        where e.channel = "Twitter" and c > 10
+        order by c desc) x 
+
+
+Q.7 Calculate the annual revenue of each account. Based on the result, find the percentage of revenue coming from each account in the respective year.
+Share the account_id, year who has the highest perc of revenue.
+select *, (Total)/(total_in_year)*100 as "Perc"
+from (select a.account_id,a.Year,a.Total,b.total_in_year
+      from (select account_id,Year(occurred_at) as "Year",sum(total_amt_usd) as "Total"
+           from pm_orders
+           group by Year,account_id) a 
+join (select Year(occurred_at) as "year",sum(total_amt_usd) as "total_in_year"
+        from pm_orders
+        group by year) b
+on a.Year=b.year) c 
+order by Perc desc
+limit 1 
