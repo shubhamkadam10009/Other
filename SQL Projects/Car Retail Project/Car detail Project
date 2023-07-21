@@ -1,20 +1,23 @@
-#For this SQL project i will be answering 4 question from this data set
+**For this SQL project i will be answering 4 question from this data set**
 
 # 1. Find out the top 3 Products (“productLine”) for each month that generated the highest profit.
 Profit = ( Price per unit - Buying Price per Unit ) x No. of Units Ordered
 
 Ans:
-select month,productLine,profit_result,rank() over(partition by month order by profit_result desc) as ranking
-from(select month,productLine,sum(profit_case) as profit_result
-from (select monthname(orderDate) as month,productLine,(priceEach-buyprice)*Quantityordered as profit_case
-from (select d.orderNumber,d.productCode,d.orderDate,d.Quantityordered,d.priceEach,c.productLine,c.buyPrice
-from cr_products c 
-join (select b.orderNumber,b.productCode,a.orderDate,b.Quantityordered,b.priceEach
-from cr_orders a 
-join cr_orderdetails b 
-on a.orderNumber=b.orderNumber)d 
-on c.productCode=d.productCode) e) f
-group by month,productLine ) g
+select *
+from      (with report as (with s as   (select a.orderNumber,monthname(a.orderDate) as "Order_Date",c.productLine,(b.priceEach - c.buyPrice)*b.quantityOrdered as "Profit"
+                                        from cr_orders a 
+                                        join cr_orderdetails b 
+                                        on a.orderNumber = b.orderNumber
+                                        join cr_products c 
+                                        on b.productCode= c.productCode)
+                        select Order_Date,productLine,sum(Profit) as "profit"
+                        from s
+                        group by productLine,Order_Date)
+            select *,rank() over(partition by Order_Date order by profit desc) as "Rank"
+            from report) a 
+where a.Rank < 4
+
 
 # 2. Find the Month on Month growth in profit for each year.
 MoM_growth is calculated as follows.
@@ -25,17 +28,18 @@ Note: Please make sure that MoM is calculated for each year.
 Meaning, that ideally MoM growth of the first month of every year should be NULL as shown in the sample output below.
 
 Ans : 
-select year,month,profit_result,((profit_result/lag(profit_result,1,"null") over(partition by year))-1)*100 as MoM
- from(select year,month,sum(profit_case) as profit_result
-from (select year(orderDate)as year,monthname(orderDate) as month,(priceEach-buyprice)*Quantityordered as profit_case
-from (select d.orderNumber,d.productCode,d.orderDate,d.Quantityordered,d.priceEach,c.buyPrice
-from cr_products c 
-join (select b.orderNumber,b.productCode,a.orderDate,b.Quantityordered,b.priceEach
-from cr_orders a 
-join cr_orderdetails b 
-on a.orderNumber=b.orderNumber)d 
-on c.productCode=d.productCode) e) f
-group by year,month ) g 
+select b.Year,b.Monthname,b.profit,((profit/profit_last_month)-1)*100 as "MoM_Growth"
+from(
+        select a.Year,Monthname,profit,lag(profit,1,"N/A") over(partition by Year order by Year,Monthdate ) as "profit_last_month"
+        from (with s as   (select a.orderNumber,year(a.orderDate) as "Year",month(a.orderDate)as"Monthdate",monthname(a.orderDate) as "Monthname",(b.priceEach - c.buyPrice)*b.quantityOrdered as "Profit"
+                                    from cr_orders a 
+                                    join cr_orderdetails b 
+                                    on a.orderNumber = b.orderNumber
+                                    join cr_products c 
+                                    on b.productCode= c.productCode)
+                select Year,Monthdate,Monthname,sum(Profit) as "profit"
+                from s
+                group by Monthdate,Monthname,Year) a ) b 
 
 # 3. For each customer i.e (customerNumber) count the number of orders above and below the average order value.
 “Average Order Value(AOV)” is calculated as below,
@@ -52,23 +56,27 @@ Order Above AVG = Actual Order Value >= AVG Order Value
 Order Below AVG = Actual Order Value < AVG Order Value
 
 Ans:
-select customerNumber,contactFirstName,contactLastName,count(cata) as "order below avg"
-from (select *, case 
-          when total_revenue>=AOV then 1 
-          when total_revenue<AOV then 0 
-          end as cata 
-from (select customerNumber,contactFirstName,contactLastName,orderNumber,quantityOrdered,priceEach,total_revenue,avg(total_revenue) over() as AOV
-from (select customerNumber,contactFirstName,contactLastName,orderNumber,quantityOrdered,priceEach,quantityOrdered*priceEach as total_revenue
-from(select c.customerNumber,c.contactFirstName,c.contactLastName,d.orderNumber,d.quantityOrdered,d.priceEach
-from (select b.orderNumber,b.customerNumber,a.contactFirstName,a.contactLastName
-from cr_customers a
-join cr_orders b 
-on a.customerNumber=b.customerNumber) c 
-join cr_orderdetails d 
-on c.orderNumber=d.orderNumber  ) e) f) g )h
-where cata=0 
-group by customerNumber
-order by customerNumber asc
+select x.customerNumber,y.contactFirstName,y.contactLastName,x.order_above_average,x.order_below_average
+from (  select e.customerNumber,sum(order_above_avg) as "order_above_average",sum(order_below_avg) as "order_below_average"
+        from   (select *, case 
+                  when Revenue >= 3205.67 then 1 
+                  else 0 
+                  end as order_above_avg,
+                  case 
+                  when Revenue < 3205.67 then 1 
+                  else 0 
+                  end as order_below_avg
+                from   (select a.customerNumber,a.orderNumber,b.productCode,(b.priceEach*b.quantityOrdered) as "Revenue"
+                        from cr_orders a 
+                        join cr_orderdetails b 
+                        on a.orderNumber = b.orderNumber
+                        join cr_products c 
+                        on b.productCode= c.productCode) d) e 
+        group by customerNumber
+        order by customerNumber asc ) x 
+Join cr_customers y 
+on x.customerNumber = y.customerNumber
+
 
 # 4. n the business, customer order the product in bulk and it is the utmost priority of the business to fulfill the order requirement as to when required. Hence a business has to keep checking their stock regularly to give uninterrupted delivery.
 To make that happen, create a report as shown below to get the updated stock and status to check if we are running out of stock (or are we going to fulfill the next customer order?)
