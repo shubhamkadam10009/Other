@@ -1,8 +1,5 @@
 # Data-Analyst-Portfolio
 
-## Excel Project
-* [Example](https://github.com/shubhamkadam10009/Data-Analyst-Portfolio/tree/main/End%20to%20End%20Projects/Sleep_health_and_lifestyle)
-
 
 Welcome to my Data Analyst Portfolio!
 
