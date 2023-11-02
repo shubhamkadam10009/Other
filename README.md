@@ -13,3 +13,5 @@ In addition to my technical skills, I also pride myself on my critical thinking 
 I am confident that my data analytics skills and experience make me an ideal candidate for any data analyst role. I hope you find my portfolio to be informative and engaging, and I welcome any opportunity to discuss my qualifications further with you.
 
 Thank you for considering me as a candidate, I look forward to hearing from you soon.
+![IMG_20230612_1841421](https://github.com/shubhamkadam10009/Data-Analyst-Portfolio/assets/135099215/912101ba-dbde-412c-a628-962ffc8f037a)
+![](https://github.com/shubhamkadam10009/Data-Analyst-Portfolio/assets/135099215/576e3702-5548-4711-b4bc-148b2447f8bb)
